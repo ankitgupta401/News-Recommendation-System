@@ -15,6 +15,7 @@ const app = express();
 require("./utils/connection");
 
 const api = require("./routes/api");
+require("./crons/fetchNews.cron");
 
 app.use(helmet());
 app.use(
