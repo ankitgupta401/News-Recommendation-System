@@ -10,6 +10,6 @@ const newsSchema = mongoose.Schema({
   engagements: { type: Number, default: 0 },
   averageViewDuration: { type: Number, default: 0 },
   isDeleted: { type: Boolean, default: false },
-});
+},{ timestamps: true });
 
 module.exports = mongoose.model("News", newsSchema);

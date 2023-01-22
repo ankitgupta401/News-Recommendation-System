@@ -12,6 +12,6 @@ const userSchema = mongoose.Schema({
   userType: { type: String, default: "USER", enum: ["USER", "ADMIN"] },
   accountVerified: { type: Boolean, default: false },
   isDeleted: { type: Boolean, default: false },
-});
+},{ timestamps: true });
 
 module.exports = mongoose.model("User", userSchema);
