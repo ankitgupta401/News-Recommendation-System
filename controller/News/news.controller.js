@@ -2,6 +2,7 @@ const { TwitterClient } = require("twitter-api-client");
 const moment = require("moment")
 const InterestsModel = require("../../models/Interests.model");
 const NewsModel = require("../../models/News.model");
+const urlMetadata = require('url-metadata');
 
 // console.log(process.env);
 const twitterClient = new TwitterClient({
@@ -112,13 +113,13 @@ const getTweets = async (interests, userProfiles) => {
 
 exports.getNewsByFilter = async (req, res, next) => {
   try {
-    const { hashTags, search, sort, page = 1, limit = 10 } = req.query;
+    const { hashTags, search, sort, page = 1, limit = 10 } = req.body;
     let query = {};
     if (hashTags) {
       query.hashTags = { $in: hashTags.split(",") };
     }
     if (search) {
-      query.text = { $regex: new RegExp(search, "i") };
+      query.title = { $regex: new RegExp(search, "gi") };
     }
     let sortQuery = { createdAt: -1 };
     if (sort) {
@@ -239,6 +240,8 @@ exports.getSingleNews = async(req, res) => {
     const {newsId} = req.body
     const news = await NewsModel.findOne({_id: newsId, isDeleted:false});
 
+    news.views +=1;
+    await news.save();
   
     const userInterests = req?.user?.interests || [];
     const interestsHashTags =await InterestsModel.find({ name: {$in: userInterests}, isDeleted:false}).lean();
@@ -272,4 +275,35 @@ exports.getSingleNews = async(req, res) => {
       message: errorMessage,
     });
   }
+}
+
+exports.getPreviewData = async (req,res) => {
+  try{
+
+      let {url} = req.query;
+    
+      // url = decodeSafeUrl(url);
+   
+   const resp=  await  urlMetadata(url);
+   res.send(resp)
+  }catch(err){
+    console.log(err);
+    let errorMessage = "Server Error";
+    if (err.errors) {
+      errorMessage =
+        err.errors.length > 0 ? err.errors[0].message : "Server Error";
+    }
+    res.status(500).json({
+      status: false,
+      data: [],
+      message: errorMessage,
+    });
+  }
+
+  
+}
+
+ const decodeSafeUrl =(value)  =>{
+  const valueBase64 = decodeURI(value);
+  return Buffer.from(valueBase64, 'base64').toString('utf8');
 }
