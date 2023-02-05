@@ -57,20 +57,23 @@ exports.addNewsFromApi = async (req, res, next) => {
       //   }
 
       for (let j = 0; j < tweets.length; j++) {
-        let exists = await NewsModel.findOne({
-          postId: tweets[j].id,
-        });
-        if (!exists) {
-          await NewsModel.create({
+        if(tweets[j].text.length > 100 && tweets[j].media.length){
+          let exists = await NewsModel.findOne({
             postId: tweets[j].id,
-            title: tweets[j].text,
-            hashTags: tweets[i]?.entities?.hashtags?.map(
-              (hashtag) => `#${hashtag.tag.toLowerCase()}`
-            ),
-            otherDetails: tweets[j],
-            source: "twitter",
           });
+          if (!exists) {
+            await NewsModel.create({
+              postId: tweets[j].id,
+              title: tweets[j].text,
+              hashTags: tweets[i]?.entities?.hashtags?.map(
+                (hashtag) => `#${hashtag.tag.toLowerCase()}`
+              ),
+              otherDetails: tweets[j],
+              source: "twitter",
+            });
+          }
         }
+       
       }
     }
     res.status(201).json({
@@ -104,7 +107,7 @@ const getTweets = async (interests, userProfiles) => {
     expansions:
       "attachments.poll_ids,attachments.media_keys,referenced_tweets.id",
     "media.fields":
-      "duration_ms,height,media_key,preview_image_url,type,url,width,public_metrics",
+      "duration_ms,height,media_key,preview_image_url,type,url,width,public_metrics,variants",
     max_results: 50,
   });
 
