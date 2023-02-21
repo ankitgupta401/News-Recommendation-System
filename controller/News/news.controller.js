@@ -57,7 +57,7 @@ exports.addNewsFromApi = async (req, res, next) => {
       //   }
 
       for (let j = 0; j < tweets.length; j++) {
-        if(tweets[j].text.length > 100 && tweets[j].media.length){
+        if (tweets[j].text.length > 100 && tweets[j].media.length) {
           let exists = await NewsModel.findOne({
             postId: tweets[j].id,
           });
@@ -65,7 +65,7 @@ exports.addNewsFromApi = async (req, res, next) => {
             await NewsModel.create({
               postId: tweets[j].id,
               title: tweets[j].text,
-              hashTags: tweets[i]?.entities?.hashtags?.map(
+              hashTags: tweets[j]?.entities?.hashtags?.map(
                 (hashtag) => `#${hashtag.tag.toLowerCase()}`
               ),
               otherDetails: tweets[j],
@@ -73,7 +73,7 @@ exports.addNewsFromApi = async (req, res, next) => {
             });
           }
         }
-       
+
       }
     }
     res.status(201).json({
@@ -158,114 +158,71 @@ exports.getNewsByFilter = async (req, res, next) => {
 
 
 
-exports.getNewsForHomePage = async (req,res) => {
-  try{
-      let startDate = moment().subtract(7, 'days').toISOString();
-      const userInterests = req?.user?.interests || [];
-      const interestsHashTags =await InterestsModel.find({ name: {$in: userInterests}, isDeleted:false}).lean();
-      let hashTags = interestsHashTags.map(val => {
-        val.hashTags
-      }).flat();
-      
-      hashTags = hashTags.map(val => val.toLowerCase());
-      let firstIds = [];
-      let body = {};
-      const trending  = await NewsModel.find({ createdAt: {$gte: startDate}, isDeleted: false}).sort({ views: 'desc'}).limit(10);
-      trending.forEach(val => {
-        firstIds.push(val._id)
-      })
-
-     body = { _id: {$nin: firstIds}, hashTags: {$in: hashTags},  isDeleted: false}
-     if(!hashTags.length){
-      delete body.hashTags;
-     }
-      const forYou = await NewsModel.find(body).sort({ views: 'desc'}).limit(4)
-      forYou.forEach(val => {
-        firstIds.push(val._id)
-      })
-
-
-     body = { _id: {$nin: firstIds}, hashTags: {$in: hashTags},  isDeleted: false}
-     if(!hashTags.length){
-      delete body.hashTags;
-     }
-      const latest = await NewsModel.find(body).sort({ createdAt: -1}).limit(4)
-      latest.forEach(val => {
-        firstIds.push(val._id)
-      })
-
-      body = { _id: {$nin: firstIds}, hashTags: {$in: hashTags} , createdAt: {$gte: startDate}, isDeleted: false}
-      if(!hashTags.length){
-       delete body.hashTags;
-      }
-      const weeklyTop = await NewsModel.find(body).sort({ views: 'desc'}).limit(4);
-      weeklyTop.forEach(val => {
-        firstIds.push(val._id)
-      })
-
-      body = { _id: {$nin: firstIds}, hashTags: {$in: hashTags}, isDeleted: false}
-      if(!hashTags.length){
-       delete body.hashTags;
-      }
-      const recent = await NewsModel.find(body).sort({ createdAt: -1}).limit(4);
-
-
-      res.status(200).json({
-        status: true,
-        data: {
-          trending,
-          forYou,
-          latest,
-          weeklyTop,
-          recent
-        },
-        message: 'Fetched Successfully'
-      })
-
-  }catch(err){
-    console.log(err);
-    let errorMessage = "Server Error";
-    if (err.errors) {
-      errorMessage =
-        err.errors.length > 0 ? err.errors[0].message : "Server Error";
-    }
-    res.status(500).json({
-      status: false,
-      data: [],
-      message: errorMessage,
-    });
-  }
-}
-
-
-exports.getSingleNews = async(req, res) => {
-  try{
-    const {newsId} = req.body
-    const news = await NewsModel.findOne({_id: newsId, isDeleted:false});
-
-    news.views +=1;
-    await news.save();
-  
+exports.getNewsForHomePage = async (req, res) => {
+  try {
+    let startDate = moment().subtract(7, 'days').toISOString();
     const userInterests = req?.user?.interests || [];
-    const interestsHashTags =await InterestsModel.find({ name: {$in: userInterests}, isDeleted:false}).lean();
+    const interestsHashTags = await InterestsModel.find({ name: { $in: userInterests }, isDeleted: false }).lean();
     let hashTags = interestsHashTags.map(val => {
       val.hashTags
     }).flat();
-    
+
     hashTags = hashTags.map(val => val.toLowerCase());
-    body = { hashTags: {$in: hashTags}, isDeleted: false}
-      if(!hashTags.length){
-       delete body.hashTags;
-      }
-   const recent = await NewsModel.find(body).sort({ createdAt: -1}).limit(4);
+    let firstIds = [];
+    let body = {};
+    const trending = await NewsModel.find({ createdAt: { $gte: startDate }, isDeleted: false }).sort({ views: 'desc' }).limit(10);
+    trending.forEach(val => {
+      firstIds.push(val._id)
+    })
+
+    body = { _id: { $nin: firstIds }, hashTags: { $in: hashTags }, isDeleted: false }
+    if (!hashTags.length) {
+      delete body.hashTags;
+    }
+    const forYou = await NewsModel.find(body).sort({ views: 'desc' }).limit(4)
+    forYou.forEach(val => {
+      firstIds.push(val._id)
+    })
+
+
+    body = { _id: { $nin: firstIds }, hashTags: { $in: hashTags }, isDeleted: false }
+    if (!hashTags.length) {
+      delete body.hashTags;
+    }
+    const latest = await NewsModel.find(body).sort({ createdAt: -1 }).limit(4)
+    latest.forEach(val => {
+      firstIds.push(val._id)
+    })
+
+    body = { _id: { $nin: firstIds }, hashTags: { $in: hashTags }, createdAt: { $gte: startDate }, isDeleted: false }
+    if (!hashTags.length) {
+      delete body.hashTags;
+    }
+    const weeklyTop = await NewsModel.find(body).sort({ views: 'desc' }).limit(4);
+    weeklyTop.forEach(val => {
+      firstIds.push(val._id)
+    })
+
+    body = { _id: { $nin: firstIds }, hashTags: { $in: hashTags }, isDeleted: false }
+    if (!hashTags.length) {
+      delete body.hashTags;
+    }
+    const recent = await NewsModel.find(body).sort({ createdAt: -1 }).limit(4);
+
 
     res.status(200).json({
       status: true,
-      data: {news, recent},
+      data: {
+        trending,
+        forYou,
+        latest,
+        weeklyTop,
+        recent
+      },
       message: 'Fetched Successfully'
     })
 
-  }catch(err){
+  } catch (err) {
     console.log(err);
     let errorMessage = "Server Error";
     if (err.errors) {
@@ -280,16 +237,59 @@ exports.getSingleNews = async(req, res) => {
   }
 }
 
-exports.getPreviewData = async (req,res) => {
-  try{
 
-      let {url} = req.query;
-    
-      // url = decodeSafeUrl(url);
-   
-   const resp=  await  urlMetadata(url);
-   res.send(resp)
-  }catch(err){
+exports.getSingleNews = async (req, res) => {
+  try {
+    const { newsId } = req.body
+    const news = await NewsModel.findOne({ _id: newsId, isDeleted: false });
+
+    news.views += 1;
+    await news.save();
+
+    const userInterests = req?.user?.interests || [];
+    const interestsHashTags = await InterestsModel.find({ name: { $in: userInterests }, isDeleted: false }).lean();
+    let hashTags = interestsHashTags.map(val => {
+      val.hashTags
+    }).flat();
+
+    hashTags = hashTags.map(val => val.toLowerCase());
+    body = { hashTags: { $in: hashTags }, isDeleted: false }
+    if (!hashTags.length) {
+      delete body.hashTags;
+    }
+    const recent = await NewsModel.find(body).sort({ createdAt: -1 }).limit(4);
+
+    res.status(200).json({
+      status: true,
+      data: { news, recent },
+      message: 'Fetched Successfully'
+    })
+
+  } catch (err) {
+    console.log(err);
+    let errorMessage = "Server Error";
+    if (err.errors) {
+      errorMessage =
+        err.errors.length > 0 ? err.errors[0].message : "Server Error";
+    }
+    res.status(500).json({
+      status: false,
+      data: [],
+      message: errorMessage,
+    });
+  }
+}
+
+exports.getPreviewData = async (req, res) => {
+  try {
+
+    let { url } = req.query;
+
+    // url = decodeSafeUrl(url);
+
+    const resp = await urlMetadata(url);
+    res.send(resp)
+  } catch (err) {
     console.log(err);
     let errorMessage = "Server Error";
     if (err.errors) {
@@ -303,10 +303,10 @@ exports.getPreviewData = async (req,res) => {
     });
   }
 
-  
+
 }
 
- const decodeSafeUrl =(value)  =>{
+const decodeSafeUrl = (value) => {
   const valueBase64 = decodeURI(value);
   return Buffer.from(valueBase64, 'base64').toString('utf8');
 }
