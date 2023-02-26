@@ -19,8 +19,10 @@ exports.addNewsFromApi = async (req, res, next) => {
     for (let i = 0; i < allInterests.length; i++) {
       const currInterest = allInterests[i];
 
-      let queryHashTags =
-        currInterest.name + " OR " + currInterest.hashTags.join(" OR ");
+      let queryHashTags;
+      if (currInterest.hashTags.length > 0) {
+        queryHashTags = currInterest.name + " OR " + currInterest.hashTags.join(" OR ");
+      }
       let queryTwitterProfiles = currInterest.twitterProfiles
         .map((val) => `from:${val}`)
         .join(" OR ");
@@ -61,13 +63,17 @@ exports.addNewsFromApi = async (req, res, next) => {
           let exists = await NewsModel.findOne({
             postId: tweets[j].id,
           });
+          let hashTags = tweets[j]?.entities?.hashtags?.map(
+            (hashtag) => `#${hashtag.tag.toLowerCase()}`
+          );
+          if (!hashTags || !hashTags.length || !currInterest.hashTags.length) {
+            hashTags = [`#${currInterest.name}`]
+          }
           if (!exists) {
             await NewsModel.create({
               postId: tweets[j].id,
               title: tweets[j].text,
-              hashTags: tweets[j]?.entities?.hashtags?.map(
-                (hashtag) => `#${hashtag.tag.toLowerCase()}`
-              ),
+              hashTags: hashTags,
               otherDetails: tweets[j],
               source: "twitter",
             });
@@ -97,11 +103,14 @@ exports.addNewsFromApi = async (req, res, next) => {
 };
 
 const getTweets = async (interests, userProfiles) => {
-  console.log(
-    `(${userProfiles}) (${interests}) has:media -has:mentions -is:retweet`
-  );
+
+  let query = `(${userProfiles}) (${interests}) has:media -has:mentions -is:retweet`
+  if (!interests) {
+    query = `(${userProfiles}) has:media -has:mentions -is:retweet`
+  }
+  console.log(query)
   let res = await twitterClient.tweetsV2.searchRecentTweets({
-    query: `(${userProfiles}) (${interests}) has:media -has:mentions -is:retweet`,
+    query: query,
     "tweet.fields":
       "attachments,author_id,context_annotations,conversation_id,created_at,entities,geo,id,in_reply_to_user_id,lang,possibly_sensitive,referenced_tweets,source,text,withheld",
     expansions:

@@ -14,7 +14,7 @@ router.post(
   [
     body("name").not().isEmpty(),
     body("twitterProfiles").not().isEmpty(),
-    body("hashTags").not().isEmpty(),
+    // body("hashTags").not().isEmpty(),
   ],
   isAuthenticated,
   errorHandler,
