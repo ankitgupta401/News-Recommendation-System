@@ -76,6 +76,7 @@ exports.addNewsFromApi = async (req, res, next) => {
               hashTags: hashTags,
               otherDetails: tweets[j],
               source: "twitter",
+              interestName: currInterest.name
             });
           }
         }
@@ -173,10 +174,9 @@ exports.getNewsForHomePage = async (req, res) => {
     const userInterests = req?.user?.interests || [];
     const interestsHashTags = await InterestsModel.find({ name: { $in: userInterests }, isDeleted: false }).lean();
     let hashTags = interestsHashTags.map(val => {
-      val.hashTags
+      val.name
     }).flat();
 
-    hashTags = hashTags.map(val => val.toLowerCase());
     let firstIds = [];
     let body = {};
     const trending = await NewsModel.find({ createdAt: { $gte: startDate }, isDeleted: false }).sort({ views: 'desc' }).limit(10);
@@ -184,7 +184,7 @@ exports.getNewsForHomePage = async (req, res) => {
       firstIds.push(val._id)
     })
 
-    body = { _id: { $nin: firstIds }, hashTags: { $in: hashTags }, isDeleted: false }
+    body = { _id: { $nin: firstIds }, interestName: { $in: hashTags }, isDeleted: false }
     if (!hashTags.length) {
       delete body.hashTags;
     }
@@ -194,7 +194,7 @@ exports.getNewsForHomePage = async (req, res) => {
     })
 
 
-    body = { _id: { $nin: firstIds }, hashTags: { $in: hashTags }, isDeleted: false }
+    body = { _id: { $nin: firstIds }, interestName: { $in: hashTags }, isDeleted: false }
     if (!hashTags.length) {
       delete body.hashTags;
     }
@@ -203,7 +203,7 @@ exports.getNewsForHomePage = async (req, res) => {
       firstIds.push(val._id)
     })
 
-    body = { _id: { $nin: firstIds }, hashTags: { $in: hashTags }, createdAt: { $gte: startDate }, isDeleted: false }
+    body = { _id: { $nin: firstIds }, interestName: { $in: hashTags }, createdAt: { $gte: startDate }, isDeleted: false }
     if (!hashTags.length) {
       delete body.hashTags;
     }
@@ -212,7 +212,7 @@ exports.getNewsForHomePage = async (req, res) => {
       firstIds.push(val._id)
     })
 
-    body = { _id: { $nin: firstIds }, hashTags: { $in: hashTags }, isDeleted: false }
+    body = { _id: { $nin: firstIds }, interestName: { $in: hashTags }, isDeleted: false }
     if (!hashTags.length) {
       delete body.hashTags;
     }
