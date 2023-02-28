@@ -186,7 +186,7 @@ exports.getNewsForHomePage = async (req, res) => {
 
     body = { _id: { $nin: firstIds }, interestName: { $in: hashTags }, isDeleted: false }
     if (!hashTags.length) {
-      delete body.hashTags;
+      delete body.interestName;
     }
     const forYou = await NewsModel.find(body).sort({ views: 'desc' }).limit(4)
     forYou.forEach(val => {
@@ -196,7 +196,7 @@ exports.getNewsForHomePage = async (req, res) => {
 
     body = { _id: { $nin: firstIds }, interestName: { $in: hashTags }, isDeleted: false }
     if (!hashTags.length) {
-      delete body.hashTags;
+      delete body.interestName;
     }
     const latest = await NewsModel.find(body).sort({ createdAt: -1 }).limit(4)
     latest.forEach(val => {
@@ -205,7 +205,7 @@ exports.getNewsForHomePage = async (req, res) => {
 
     body = { _id: { $nin: firstIds }, interestName: { $in: hashTags }, createdAt: { $gte: startDate }, isDeleted: false }
     if (!hashTags.length) {
-      delete body.hashTags;
+      delete body.interestName;
     }
     const weeklyTop = await NewsModel.find(body).sort({ views: 'desc' }).limit(4);
     weeklyTop.forEach(val => {
@@ -214,7 +214,7 @@ exports.getNewsForHomePage = async (req, res) => {
 
     body = { _id: { $nin: firstIds }, interestName: { $in: hashTags }, isDeleted: false }
     if (!hashTags.length) {
-      delete body.hashTags;
+      delete body.interestName;
     }
     const recent = await NewsModel.find(body).sort({ createdAt: -1 }).limit(4);
 
