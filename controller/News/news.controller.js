@@ -2,8 +2,9 @@ const { TwitterClient } = require("twitter-api-client");
 const moment = require("moment")
 const InterestsModel = require("../../models/Interests.model");
 const NewsModel = require("../../models/News.model");
+const User = require("../../models/User.model");
 const urlMetadata = require('url-metadata');
-
+const jwt = require("jsonwebtoken");
 // console.log(process.env);
 const twitterClient = new TwitterClient({
   apiKey: process.env.CONSUMER_KEY,
@@ -171,15 +172,32 @@ exports.getNewsByFilter = async (req, res, next) => {
 exports.getNewsForHomePage = async (req, res) => {
   try {
     let startDate = moment().subtract(7, 'days').toISOString();
-    const userInterests = req?.user?.interests || [];
+    let user;
+    let token = req.headers.authorization
+      ? req.headers.authorization.split(" ")[1]
+      : null;
+
+    if (token) {
+      let decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+
+      user = await User.findOne({
+        _id: decoded._id,
+        isDeleted: false,
+      });
+    }
+    const userInterests = user?.interests || [];
+
     const interestsHashTags = await InterestsModel.find({ name: { $in: userInterests }, isDeleted: false }).lean();
-    let hashTags = interestsHashTags.map(val => {
+
+    let hashTags = interestsHashTags.map(val =>
       val.name
-    }).flat();
+    ).flat();
 
     let firstIds = [];
     let body = {};
-    const trending = await NewsModel.find({ createdAt: { $gte: startDate }, isDeleted: false }).sort({ views: 'desc' }).limit(10);
+
+
+    const trending = await NewsModel.find({ interestName: { $in: hashTags }, createdAt: { $gte: startDate }, isDeleted: false }).sort({ views: 'desc' }).limit(10);
     trending.forEach(val => {
       firstIds.push(val._id)
     })
