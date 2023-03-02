@@ -15,7 +15,7 @@ const twitterClient = new TwitterClient({
 
 exports.addNewsFromApi = async (req, res, next) => {
   try {
-    let allInterests = await InterestsModel.find({ isDeleted: false });
+    let allInterests = await InterestsModel.find({ name: "Religion and spirituality", isDeleted: false });
 
     for (let i = 0; i < allInterests.length; i++) {
       const currInterest = allInterests[i];
@@ -29,59 +29,61 @@ exports.addNewsFromApi = async (req, res, next) => {
         .join(" OR ");
       const result = await getTweets(queryHashTags, queryTwitterProfiles);
       let imgMap = {};
-      //   console.log(result);
-      result?.includes?.media?.forEach((media) => {
-        imgMap[media.media_key] = media;
-      });
-      let tweets = result.data.map((tweet) => {
-        return {
-          ...tweet,
-          media: tweet.attachments
-            ? tweet.attachments.media_keys.map((key) => imgMap[key])
-            : [],
-        };
-      });
-      //   console.log(tweets.length);
-      //   let hashTags = [...currInterest.hashTags];
-      //   if (hashTags.length < 20) {
-      //     hashTags = [
-      //       ...hashTags,
-      //       ...tweets
-      //         .map((tweet) => {
-      //           return tweet?.entities?.hashtags?.map(
-      //             (hashtag) => `#${hashtag.tag}`
-      //           );
-      //         })
-      //         .filter((val) => val)
-      //         .flat(),
-      //     ];
-      //     currInterest.hashTags = [...new Set(hashTags)];
-      //     await currInterest.save();
-      //   }
 
-      for (let j = 0; j < tweets.length; j++) {
-        if (tweets[j].text.length > 100 && tweets[j].media.length) {
-          let exists = await NewsModel.findOne({
-            postId: tweets[j].id,
-          });
-          let hashTags = tweets[j]?.entities?.hashtags?.map(
-            (hashtag) => `#${hashtag.tag.toLowerCase()}`
-          );
-          if (!hashTags || !hashTags.length || !currInterest.hashTags.length) {
-            hashTags = [`#${currInterest.name}`]
-          }
-          if (!exists) {
-            await NewsModel.create({
+      if (result && result?.data?.length) {
+        result?.includes?.media?.forEach((media) => {
+          imgMap[media.media_key] = media;
+        });
+        let tweets = result.data.map((tweet) => {
+          return {
+            ...tweet,
+            media: tweet.attachments
+              ? tweet.attachments.media_keys.map((key) => imgMap[key])
+              : [],
+          };
+        });
+        //   console.log(tweets.length);
+        //   let hashTags = [...currInterest.hashTags];
+        //   if (hashTags.length < 20) {
+        //     hashTags = [
+        //       ...hashTags,
+        //       ...tweets
+        //         .map((tweet) => {
+        //           return tweet?.entities?.hashtags?.map(
+        //             (hashtag) => `#${hashtag.tag}`
+        //           );
+        //         })
+        //         .filter((val) => val)
+        //         .flat(),
+        //     ];
+        //     currInterest.hashTags = [...new Set(hashTags)];
+        //     await currInterest.save();
+        //   }
+
+        for (let j = 0; j < tweets.length; j++) {
+          if (tweets[j].text.length > 100 && tweets[j].media.length) {
+            let exists = await NewsModel.findOne({
               postId: tweets[j].id,
-              title: tweets[j].text,
-              hashTags: hashTags,
-              otherDetails: tweets[j],
-              source: "twitter",
-              interestName: currInterest.name
             });
+            let hashTags = tweets[j]?.entities?.hashtags?.map(
+              (hashtag) => `#${hashtag.tag.toLowerCase()}`
+            );
+            if (!hashTags || !hashTags.length || !currInterest.hashTags.length) {
+              hashTags = [`#${currInterest.name}`]
+            }
+            if (!exists) {
+              await NewsModel.create({
+                postId: tweets[j].id,
+                title: tweets[j].text,
+                hashTags: hashTags,
+                otherDetails: tweets[j],
+                source: "twitter",
+                interestName: currInterest.name
+              });
+            }
           }
-        }
 
+        }
       }
     }
     res.status(201).json({
