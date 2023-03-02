@@ -15,7 +15,7 @@ const twitterClient = new TwitterClient({
 
 exports.addNewsFromApi = async (req, res, next) => {
   try {
-    let allInterests = await InterestsModel.find({ name: "Religion and spirituality", isDeleted: false });
+    let allInterests = await InterestsModel.find({ isDeleted: false });
 
     for (let i = 0; i < allInterests.length; i++) {
       const currInterest = allInterests[i];
