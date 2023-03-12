@@ -179,7 +179,8 @@ exports.getNewsForHomePage = async (req, res) => {
       ? req.headers.authorization.split(" ")[1]
       : null;
 
-    if (token) {
+
+    if (token && token !== 'null') {
       let decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
 
       user = await User.findOne({
