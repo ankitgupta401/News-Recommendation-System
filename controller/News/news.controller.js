@@ -197,10 +197,12 @@ exports.getNewsForHomePage = async (req, res) => {
     ).flat();
 
     let firstIds = [];
-    let body = {};
+    let body = { interestName: { $in: hashTags }, createdAt: { $gte: startDate }, isDeleted: false };
+    if (!hashTags.length) {
+      delete body.interestName;
+    }
 
-
-    const trending = await NewsModel.find({ interestName: { $in: hashTags }, createdAt: { $gte: startDate }, isDeleted: false }).sort({ views: 'desc' }).limit(10);
+    const trending = await NewsModel.find(body).sort({ views: 'desc' }).limit(10);
     trending.forEach(val => {
       firstIds.push(val._id)
     })
