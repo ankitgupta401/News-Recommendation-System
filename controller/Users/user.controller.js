@@ -17,7 +17,7 @@ exports.createUserUsingEmailPassword = async (req, res, next) => {
     });
 
     if (doesAlreadyExist.length > 0) {
-      return res.status(200).json({
+      return res.status(400).json({
         status: false,
         data: doesAlreadyExist[0],
         message: "User Already Exists",
